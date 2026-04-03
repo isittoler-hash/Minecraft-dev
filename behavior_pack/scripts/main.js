@@ -95,28 +95,47 @@ function enforceWorldBorder(player) {
   }
 }
 
-function applyCombatElytraRule(player) {
-  if (!player.hasTag("qol:in_combat")) return;
-
+function disableEquippedElytra(player) {
   const equippable = player.getComponent("equippable");
-  if (!equippable) return;
+  const inventory = player.getComponent("inventory")?.container;
+  if (!equippable || !inventory) return;
 
   const chestItem = equippable.getEquipment(EquipmentSlot.Chest);
   if (!chestItem || chestItem.typeId !== "minecraft:elytra") return;
 
   equippable.setEquipment(EquipmentSlot.Chest);
-  player.dimension.spawnItem(chestItem, player.location);
-  player.sendMessage("§eElytra is disabled while in combat.");
+  const leftover = inventory.addItem(chestItem);
+  if (leftover) {
+    player.dimension.spawnItem(leftover, player.location);
+    player.sendMessage("§eElytra disabled. Inventory full, leftover item dropped.");
+    return;
+  }
+
+  player.sendMessage("§eElytra disabled after taking player damage.");
+}
+
+function getPlayerDamager(damageSource) {
+  if (damageSource.damagingEntity instanceof Player) {
+    return damageSource.damagingEntity;
+  }
+
+  const projectile = damageSource.damagingProjectile;
+  if (!projectile || projectile.typeId !== "minecraft:arrow") return undefined;
+
+  const projectileOwner = projectile.getComponent("projectile")?.owner;
+  return projectileOwner instanceof Player ? projectileOwner : undefined;
 }
 
 world.afterEvents.entityHurt.subscribe((ev) => {
-  const attacker = ev.damageSource.damagingEntity;
   const victim = ev.hurtEntity;
+  if (!(victim instanceof Player)) return;
 
-  if (!(attacker instanceof Player) || !(victim instanceof Player)) return;
+  const damager = getPlayerDamager(ev.damageSource);
+  if (!damager) return;
 
-  setCombat(attacker);
+  setCombat(damager);
   setCombat(victim);
+  disableEquippedElytra(victim);
 });
 
 world.afterEvents.playerLeave.subscribe((ev) => {
@@ -144,6 +163,5 @@ system.runInterval(() => {
     updateCombatState(player);
     applySpeedByBlock(player);
     enforceWorldBorder(player);
-    applyCombatElytraRule(player);
   }
 }, CONFIG.checkIntervalTicks);
