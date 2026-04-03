@@ -27,3 +27,8 @@ Edit `behavior_pack/scripts/main.js`:
 - Visual HUD cues for combat tag timer.
 - Region exceptions (spawn/safezones).
 - Datadriven config via scoreboards or properties.
+
+## Repository scope cleanup
+
+- Removed unmodified vanilla data folders from `behavior_pack` to keep the pack focused on custom QoL logic.
+- Most recently removed `behavior_pack/items` and `behavior_pack/trading` in addition to earlier recipe/biome/entity table removals.
