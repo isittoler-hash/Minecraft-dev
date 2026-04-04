@@ -2,7 +2,7 @@
   "format_version": 2,
   "header": {
     "name": "QoL Core Behavior Pack",
-    "description": "Server quality-of-life systems: path/brick speed, world border, combat logging, combat elytra.",
+    "description": "Command-only QoL systems: welcome message + path/brick speed boosts.",
     "uuid": "ae9e8d63-d954-4089-966f-081f8d1f8cc0",
     "version": [
       0,
@@ -24,17 +24,6 @@
         1,
         0
       ]
-    },
-    {
-      "type": "script",
-      "language": "javascript",
-      "entry": "scripts/main.js",
-      "uuid": "1e26957b-87c4-412e-9c8d-5ba276e0971a",
-      "version": [
-        0,
-        1,
-        0
-      ]
     }
   ],
   "dependencies": [
@@ -45,10 +34,6 @@
         1,
         0
       ]
-    },
-    {
-      "module_name": "@minecraft/server",
-      "version": "1.12.0"
     }
   ]
 }
