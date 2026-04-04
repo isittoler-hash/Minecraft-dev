@@ -3,28 +3,48 @@
   "header": {
     "name": "QoL Core Behavior Pack",
     "description": "Server quality-of-life systems: path/brick speed, world border, combat logging, combat elytra.",
-    "uuid": "ee649bcf-256c-4013-9068-6a802b89d756",
-    "version": [0, 1, 0],
-    "min_engine_version": [1, 21, 0]
+    "uuid": "ae9e8d63-d954-4089-966f-081f8d1f8cc0",
+    "version": [
+      0,
+      1,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
   },
   "modules": [
     {
       "type": "data",
-      "uuid": "fa6e90c8-c925-460f-8155-c8a60b753caa",
-      "version": [0, 1, 0]
+      "uuid": "4615b5d6-7a3f-410a-91cd-83a3a48c9dde",
+      "version": [
+        0,
+        1,
+        0
+      ]
     },
     {
       "type": "script",
       "language": "javascript",
       "entry": "scripts/main.js",
-      "uuid": "f3cb8bb8-3fd4-4c3a-a972-8f8cf0b7d42f",
-      "version": [0, 1, 0]
+      "uuid": "1e26957b-87c4-412e-9c8d-5ba276e0971a",
+      "version": [
+        0,
+        1,
+        0
+      ]
     }
   ],
   "dependencies": [
     {
       "uuid": "66c6e9a8-3093-462a-9c36-dbb052165822",
-      "version": [0, 1, 0]
+      "version": [
+        0,
+        1,
+        0
+      ]
     },
     {
       "module_name": "@minecraft/server",
