@@ -73,7 +73,7 @@ function isInCombat(player) {
 
 function clearCombatHud(player) {
   if (!CONFIG.combatHudEnabled) return;
-  player.onScreenDisplay.setActionBar(" ");
+  player.onScreenDisplay.setActionBar("");
   STATE.lastCombatHudSecondsByName.delete(getPlayerKey(player));
 }
 
@@ -154,7 +154,7 @@ function warnSafeZoneBlockedCombat(player) {
 function applySpeedByBlock(player) {
   const blockBelow = player.dimension.getBlock({
     x: Math.floor(player.location.x),
-    y: Math.floor(player.location.y) - 1,
+    y: Math.floor(player.location.y - 0.1),
     z: Math.floor(player.location.z),
   });
 
