@@ -9,7 +9,7 @@ This repository is now scaffolded for a server-focused Bedrock addon pair:
 
 - Speed I on `minecraft:dirt_path`.
 - Speed II on `minecraft:bricks`.
-- Configurable square world border with pushback.
+- Configurable square world border with per-dimension settings and pushback.
 - Anti combat log tag window (15s) with reconnect penalty.
 - Combat elytra disable (elytra unequips while combat-tagged).
 
@@ -17,7 +17,8 @@ This repository is now scaffolded for a server-focused Bedrock addon pair:
 
 Edit `behavior_pack/scripts/main.js`:
 
-- `worldBorderRadius`
+- `worldBorderRadius` (fallback radius)
+- `worldBorderRadiusByDimension`
 - `combatTagSeconds`
 - `checkIntervalTicks`
 - `joinBroadcastEnabled`
@@ -28,7 +29,6 @@ Edit `behavior_pack/scripts/main.js`:
 
 ## Next suggested modules
 
-- Per-world/per-dimension border settings.
 - Visual HUD cues for combat tag timer.
 - Region exceptions (spawn/safezones).
 - Datadriven config via scoreboards or properties.

@@ -2,6 +2,11 @@ import { EquipmentSlot, Player, system, world } from "@minecraft/server";
 
 const CONFIG = {
   worldBorderRadius: 1500,
+  worldBorderRadiusByDimension: {
+    "minecraft:overworld": 1500,
+    "minecraft:nether": 375,
+    "minecraft:the_end": 1500,
+  },
   combatTagSeconds: 15,
   checkIntervalTicks: 20,
   speedEffectSeconds: 2,
@@ -70,6 +75,17 @@ function applySpeedByBlock(player) {
   }
 }
 
+function getBorderRadiusForDimension(dimensionId) {
+  const perDimensionRadius =
+    CONFIG.worldBorderRadiusByDimension?.[dimensionId];
+
+  if (typeof perDimensionRadius === "number" && perDimensionRadius > 0) {
+    return perDimensionRadius;
+  }
+
+  return CONFIG.worldBorderRadius;
+}
+
 function clampToBorder(value, radius) {
   if (value > radius) return radius - 0.5;
   if (value < -radius) return -radius + 0.5;
@@ -78,7 +94,7 @@ function clampToBorder(value, radius) {
 
 function enforceWorldBorder(player) {
   const { x, y, z } = player.location;
-  const r = CONFIG.worldBorderRadius;
+  const r = getBorderRadiusForDimension(player.dimension.id);
 
   if (Math.abs(x) <= r && Math.abs(z) <= r) {
     return;
