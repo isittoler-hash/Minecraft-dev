@@ -12,6 +12,7 @@ This repository is now scaffolded for a server-focused Bedrock addon pair:
 - Configurable square world border with per-dimension settings and pushback.
 - Anti combat log tag window (15s) with reconnect penalty.
 - Combat elytra disable (elytra unequips while combat-tagged).
+- Combat HUD actionbar countdown while tagged (with final-seconds color warning).
 
 ## Main config
 
@@ -26,9 +27,13 @@ Edit `behavior_pack/scripts/main.js`:
 - `joinTitleEnabled`
 - `joinTitle`
 - `joinSubtitle`
+- `combatHudEnabled`
+- `combatHudMessage` (`{seconds}` placeholder supported)
+- `combatHudFinalSeconds`
 
 ## Next suggested modules
 
+- Per-world/per-dimension border settings.
 - Visual HUD cues for combat tag timer.
 - Region exceptions (spawn/safezones).
 
