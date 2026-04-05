@@ -2,6 +2,11 @@ import { EquipmentSlot, Player, system, world } from "@minecraft/server";
 
 const CONFIG = {
   worldBorderRadius: 1500,
+  worldBorderRadiusByDimension: {
+    "minecraft:overworld": 1500,
+    "minecraft:nether": 375,
+    "minecraft:the_end": 1500,
+  },
   combatTagSeconds: 15,
   checkIntervalTicks: 20,
   speedEffectSeconds: 2,
@@ -19,6 +24,9 @@ const CONFIG = {
     },
   ],
   safeZoneMessageCooldownTicks: 100,
+  combatHudEnabled: true,
+  combatHudMessage: "§c⚔ In combat: §e{seconds}s",
+  combatHudFinalSeconds: 5,
 };
 
 const STATE = {
@@ -26,10 +34,17 @@ const STATE = {
   combatLogPenalty: new Set(),
   borderWarnCooldownByName: new Map(),
   safeZoneWarnCooldownByName: new Map(),
+  lastCombatHudSecondsByName: new Map(),
 };
 
 function nowTick() {
   return system.currentTick;
+}
+
+function getCombatTicksRemaining(player) {
+  const expiry = STATE.combatUntilByName.get(player.name);
+  if (typeof expiry !== "number") return 0;
+  return Math.max(0, expiry - nowTick());
 }
 
 function setCombat(player) {
@@ -39,18 +54,48 @@ function setCombat(player) {
 }
 
 function isInCombat(player) {
-  const expiry = STATE.combatUntilByName.get(player.name);
-  return typeof expiry === "number" && expiry > nowTick();
+  return getCombatTicksRemaining(player) > 0;
+}
+
+function clearCombatHud(player) {
+  if (!CONFIG.combatHudEnabled) return;
+  player.onScreenDisplay.setActionBar(" ");
+  STATE.lastCombatHudSecondsByName.delete(player.name);
+}
+
+function updateCombatHud(player) {
+  if (!CONFIG.combatHudEnabled) return;
+
+  const remainingTicks = getCombatTicksRemaining(player);
+  if (remainingTicks <= 0) {
+    STATE.lastCombatHudSecondsByName.delete(player.name);
+    return;
+  }
+
+  const secondsRemaining = Math.ceil(remainingTicks / 20);
+  const lastShown = STATE.lastCombatHudSecondsByName.get(player.name);
+  if (lastShown === secondsRemaining) return;
+
+  const formattedSeconds =
+    secondsRemaining <= CONFIG.combatHudFinalSeconds
+      ? `§4${secondsRemaining}`
+      : `§e${secondsRemaining}`;
+  const message = CONFIG.combatHudMessage.replace("{seconds}", formattedSeconds);
+
+  player.onScreenDisplay.setActionBar(message);
+  STATE.lastCombatHudSecondsByName.set(player.name, secondsRemaining);
 }
 
 function updateCombatState(player) {
   if (isInCombat(player)) {
     player.addTag("qol:in_combat");
+    updateCombatHud(player);
     return;
   }
 
   STATE.combatUntilByName.delete(player.name);
   player.removeTag("qol:in_combat");
+  clearCombatHud(player);
 }
 
 function isInsideBounds(location, min, max) {
@@ -114,6 +159,17 @@ function applySpeedByBlock(player) {
   }
 }
 
+function getBorderRadiusForDimension(dimensionId) {
+  const perDimensionRadius =
+    CONFIG.worldBorderRadiusByDimension?.[dimensionId];
+
+  if (typeof perDimensionRadius === "number" && perDimensionRadius > 0) {
+    return perDimensionRadius;
+  }
+
+  return CONFIG.worldBorderRadius;
+}
+
 function clampToBorder(value, radius) {
   if (value > radius) return radius - 0.5;
   if (value < -radius) return -radius + 0.5;
@@ -122,7 +178,7 @@ function clampToBorder(value, radius) {
 
 function enforceWorldBorder(player) {
   const { x, y, z } = player.location;
-  const r = CONFIG.worldBorderRadius;
+  const r = getBorderRadiusForDimension(player.dimension.id);
 
   if (Math.abs(x) <= r && Math.abs(z) <= r) {
     return;
@@ -219,6 +275,7 @@ world.afterEvents.playerLeave.subscribe((ev) => {
   STATE.combatUntilByName.delete(ev.playerName);
   STATE.borderWarnCooldownByName.delete(ev.playerName);
   STATE.safeZoneWarnCooldownByName.delete(ev.playerName);
+  STATE.lastCombatHudSecondsByName.delete(ev.playerName);
 });
 
 world.afterEvents.playerSpawn.subscribe((ev) => {
