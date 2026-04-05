@@ -31,7 +31,6 @@ Edit `behavior_pack/scripts/main.js`:
 - Per-world/per-dimension border settings.
 - Visual HUD cues for combat tag timer.
 - Region exceptions (spawn/safezones).
-- Datadriven config via scoreboards or properties.
 
 ## Repository scope cleanup
 
