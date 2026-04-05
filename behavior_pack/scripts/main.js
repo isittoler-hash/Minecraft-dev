@@ -5,6 +5,11 @@ const CONFIG = {
   combatTagSeconds: 15,
   checkIntervalTicks: 20,
   speedEffectSeconds: 2,
+  joinBroadcastEnabled: true,
+  joinBroadcastMessage: "§a{player} joined the server. Welcome!",
+  joinTitleEnabled: true,
+  joinTitle: "§6Welcome",
+  joinSubtitle: "§eHave fun and play fair!",
 };
 
 const STATE = {
@@ -126,6 +131,22 @@ function getPlayerDamager(damageSource) {
   return projectileOwner instanceof Player ? projectileOwner : undefined;
 }
 
+function sendJoinWelcome(player) {
+  if (CONFIG.joinBroadcastEnabled) {
+    const msg = CONFIG.joinBroadcastMessage.replace("{player}", player.name);
+    world.sendMessage(msg);
+  }
+
+  if (CONFIG.joinTitleEnabled) {
+    player.onScreenDisplay.setTitle(CONFIG.joinTitle, {
+      subtitle: CONFIG.joinSubtitle,
+      stayDuration: 70,
+      fadeInDuration: 10,
+      fadeOutDuration: 20,
+    });
+  }
+}
+
 world.afterEvents.entityHurt.subscribe((ev) => {
   const victim = ev.hurtEntity;
   if (!(victim instanceof Player)) return;
@@ -151,6 +172,8 @@ world.afterEvents.playerSpawn.subscribe((ev) => {
   if (!ev.initialSpawn) return;
 
   const player = ev.player;
+  sendJoinWelcome(player);
+
   if (!STATE.combatLogPenalty.has(player.name)) return;
 
   STATE.combatLogPenalty.delete(player.name);

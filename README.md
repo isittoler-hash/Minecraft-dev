@@ -20,6 +20,11 @@ Edit `behavior_pack/scripts/main.js`:
 - `worldBorderRadius`
 - `combatTagSeconds`
 - `checkIntervalTicks`
+- `joinBroadcastEnabled`
+- `joinBroadcastMessage` (`{player}` placeholder supported)
+- `joinTitleEnabled`
+- `joinTitle`
+- `joinSubtitle`
 
 ## Next suggested modules
 
