@@ -10,16 +10,26 @@ const CONFIG = {
   joinTitleEnabled: true,
   joinTitle: "§6Welcome",
   joinSubtitle: "§eHave fun and play fair!",
+  combatHudEnabled: true,
+  combatHudMessage: "§c⚔ In combat: §e{seconds}s",
+  combatHudFinalSeconds: 5,
 };
 
 const STATE = {
   combatUntilByName: new Map(),
   combatLogPenalty: new Set(),
   borderWarnCooldownByName: new Map(),
+  lastCombatHudSecondsByName: new Map(),
 };
 
 function nowTick() {
   return system.currentTick;
+}
+
+function getCombatTicksRemaining(player) {
+  const expiry = STATE.combatUntilByName.get(player.name);
+  if (typeof expiry !== "number") return 0;
+  return Math.max(0, expiry - nowTick());
 }
 
 function setCombat(player) {
@@ -29,18 +39,48 @@ function setCombat(player) {
 }
 
 function isInCombat(player) {
-  const expiry = STATE.combatUntilByName.get(player.name);
-  return typeof expiry === "number" && expiry > nowTick();
+  return getCombatTicksRemaining(player) > 0;
+}
+
+function clearCombatHud(player) {
+  if (!CONFIG.combatHudEnabled) return;
+  player.onScreenDisplay.setActionBar(" ");
+  STATE.lastCombatHudSecondsByName.delete(player.name);
+}
+
+function updateCombatHud(player) {
+  if (!CONFIG.combatHudEnabled) return;
+
+  const remainingTicks = getCombatTicksRemaining(player);
+  if (remainingTicks <= 0) {
+    STATE.lastCombatHudSecondsByName.delete(player.name);
+    return;
+  }
+
+  const secondsRemaining = Math.ceil(remainingTicks / 20);
+  const lastShown = STATE.lastCombatHudSecondsByName.get(player.name);
+  if (lastShown === secondsRemaining) return;
+
+  const formattedSeconds =
+    secondsRemaining <= CONFIG.combatHudFinalSeconds
+      ? `§4${secondsRemaining}`
+      : `§e${secondsRemaining}`;
+  const message = CONFIG.combatHudMessage.replace("{seconds}", formattedSeconds);
+
+  player.onScreenDisplay.setActionBar(message);
+  STATE.lastCombatHudSecondsByName.set(player.name, secondsRemaining);
 }
 
 function updateCombatState(player) {
   if (isInCombat(player)) {
     player.addTag("qol:in_combat");
+    updateCombatHud(player);
     return;
   }
 
   STATE.combatUntilByName.delete(player.name);
   player.removeTag("qol:in_combat");
+  clearCombatHud(player);
 }
 
 function applySpeedByBlock(player) {
@@ -166,6 +206,7 @@ world.afterEvents.playerLeave.subscribe((ev) => {
   }
   STATE.combatUntilByName.delete(ev.playerName);
   STATE.borderWarnCooldownByName.delete(ev.playerName);
+  STATE.lastCombatHudSecondsByName.delete(ev.playerName);
 });
 
 world.afterEvents.playerSpawn.subscribe((ev) => {
