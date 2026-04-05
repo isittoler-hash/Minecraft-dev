@@ -7,7 +7,7 @@ This repository is now scaffolded for a server-focused Bedrock addon pair:
 
 ## Implemented in this first scaffold
 
-- Speed I on `minecraft:dirt_path`.
+- Speed I on path blocks (`minecraft:grass_path`, with `minecraft:dirt_path` compatibility).
 - Speed II on `minecraft:bricks`.
 - Configurable square world border with per-dimension settings and pushback.
 - Anti combat log tag window (15s) with reconnect penalty.
@@ -17,7 +17,7 @@ This repository is now scaffolded for a server-focused Bedrock addon pair:
 
 ## Main config
 
-Edit `behavior_pack/scripts/main.js`:
+Edit `behavior_pack/scripts/modules/config.js`:
 
 - `worldBorderRadius` (fallback radius)
 - `worldBorderRadiusByDimension`
