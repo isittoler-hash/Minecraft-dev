@@ -10,12 +10,22 @@ const CONFIG = {
   joinTitleEnabled: true,
   joinTitle: "§6Welcome",
   joinSubtitle: "§eHave fun and play fair!",
+  safeZones: [
+    {
+      name: "spawn",
+      dimensionId: "minecraft:overworld",
+      min: { x: -64, y: -64, z: -64 },
+      max: { x: 64, y: 320, z: 64 },
+    },
+  ],
+  safeZoneMessageCooldownTicks: 100,
 };
 
 const STATE = {
   combatUntilByName: new Map(),
   combatLogPenalty: new Set(),
   borderWarnCooldownByName: new Map(),
+  safeZoneWarnCooldownByName: new Map(),
 };
 
 function nowTick() {
@@ -41,6 +51,40 @@ function updateCombatState(player) {
 
   STATE.combatUntilByName.delete(player.name);
   player.removeTag("qol:in_combat");
+}
+
+function isInsideBounds(location, min, max) {
+  return (
+    location.x >= min.x &&
+    location.x <= max.x &&
+    location.y >= min.y &&
+    location.y <= max.y &&
+    location.z >= min.z &&
+    location.z <= max.z
+  );
+}
+
+function getSafeZoneAtPlayer(player) {
+  for (const zone of CONFIG.safeZones) {
+    if (zone.dimensionId !== player.dimension.id) continue;
+    if (isInsideBounds(player.location, zone.min, zone.max)) {
+      return zone;
+    }
+  }
+
+  return undefined;
+}
+
+function isInSafeZone(player) {
+  return !!getSafeZoneAtPlayer(player);
+}
+
+function warnSafeZoneBlockedCombat(player) {
+  const cooldownUntil = STATE.safeZoneWarnCooldownByName.get(player.name) ?? 0;
+  if (cooldownUntil > nowTick()) return;
+
+  player.sendMessage("§eCombat interactions are disabled in this safe zone.");
+  STATE.safeZoneWarnCooldownByName.set(player.name, nowTick() + CONFIG.safeZoneMessageCooldownTicks);
 }
 
 function applySpeedByBlock(player) {
@@ -154,6 +198,14 @@ world.afterEvents.entityHurt.subscribe((ev) => {
   const damager = getPlayerDamager(ev.damageSource);
   if (!damager) return;
 
+  if (isInSafeZone(victim) || isInSafeZone(damager)) {
+    warnSafeZoneBlockedCombat(victim);
+    if (damager.name !== victim.name) {
+      warnSafeZoneBlockedCombat(damager);
+    }
+    return;
+  }
+
   setCombat(damager);
   setCombat(victim);
   disableEquippedElytra(victim);
@@ -166,6 +218,7 @@ world.afterEvents.playerLeave.subscribe((ev) => {
   }
   STATE.combatUntilByName.delete(ev.playerName);
   STATE.borderWarnCooldownByName.delete(ev.playerName);
+  STATE.safeZoneWarnCooldownByName.delete(ev.playerName);
 });
 
 world.afterEvents.playerSpawn.subscribe((ev) => {

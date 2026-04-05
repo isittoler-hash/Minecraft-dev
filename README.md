@@ -12,6 +12,7 @@ This repository is now scaffolded for a server-focused Bedrock addon pair:
 - Configurable square world border with pushback.
 - Anti combat log tag window (15s) with reconnect penalty.
 - Combat elytra disable (elytra unequips while combat-tagged).
+- Region-based safezone exceptions for combat systems (spawn support by default).
 
 ## Main config
 
@@ -25,12 +26,13 @@ Edit `behavior_pack/scripts/main.js`:
 - `joinTitleEnabled`
 - `joinTitle`
 - `joinSubtitle`
+- `safeZones` (AABB regions by dimension for spawn/safezone exceptions)
+- `safeZoneMessageCooldownTicks`
 
 ## Next suggested modules
 
 - Per-world/per-dimension border settings.
 - Visual HUD cues for combat tag timer.
-- Region exceptions (spawn/safezones).
 
 ## Repository scope cleanup
 
