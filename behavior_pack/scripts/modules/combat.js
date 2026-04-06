@@ -25,8 +25,12 @@ export function isInCombat(player) {
 
 export function clearCombatHud(player) {
   if (!CONFIG.combatHudEnabled) return;
-  player.onScreenDisplay.setActionBar(" ");
-  STATE.lastCombatHudSecondsByName.delete(getPlayerKey(player));
+
+  const playerKey = getPlayerKey(player);
+  if (!STATE.lastCombatHudSecondsByName.has(playerKey)) return;
+
+  player.onScreenDisplay.setActionBar("");
+  STATE.lastCombatHudSecondsByName.delete(playerKey);
 }
 
 export function updateCombatHud(player) {
