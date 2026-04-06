@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "QoL Core Resource Pack",
+    "description": "Visual resources for server quality-of-life systems.",
+    "uuid": "66c6e9a8-3093-462a-9c36-dbb052165822",
+    "version": [
+      0,
+      1,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "9800c193-a865-4d65-b57a-1d0618bacd2e",
+      "version": [
+        0,
+        1,
+        0
+      ]
+    }
+  ]
+}

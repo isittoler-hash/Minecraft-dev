@@ -1,7 +1,27 @@
-import { EquipmentSlot, Player } from "@minecraft/server";
+import { Player } from "@minecraft/server";
 import { CONFIG, TICKS_PER_SECOND } from "./config.js";
 import { STATE } from "./state.js";
 import { getPlayerKey, nowTick } from "./utils.js";
+
+export const COMBAT_SCRIPT_EVENT_ID = "qol:combat";
+export const COMBAT_OVERRIDE_MODES = {
+  forcedIn: "force_in",
+  forcedOut: "force_out",
+};
+
+const FORCED_IN_OVERRIDE = "forced_in";
+const FORCED_OUT_OVERRIDE = "forced_out";
+const FORCED_HUD_VALUE = "__forced__";
+
+function getCombatOverrideByName(playerName) {
+  return STATE.combatOverrideByName.get(playerName);
+}
+
+function getForcedOverrideMode(overrideValue) {
+  if (overrideValue === FORCED_IN_OVERRIDE) return FORCED_IN_OVERRIDE;
+  if (overrideValue === FORCED_OUT_OVERRIDE) return FORCED_OUT_OVERRIDE;
+  return undefined;
+}
 
 export function getCombatTicksRemainingByName(playerName) {
   const expiry = STATE.combatUntilByName.get(playerName);
@@ -13,81 +33,122 @@ export function getCombatTicksRemaining(player) {
   return getCombatTicksRemainingByName(getPlayerKey(player));
 }
 
-export function setCombat(player) {
-  const expiry = nowTick() + CONFIG.combatTagSeconds * TICKS_PER_SECOND;
-  STATE.combatUntilByName.set(getPlayerKey(player), expiry);
-  player.addTag("qol:in_combat");
+export function isPlayerNameInCombat(playerName) {
+  const override = getForcedOverrideMode(getCombatOverrideByName(playerName));
+  if (override === FORCED_IN_OVERRIDE) return true;
+  if (override === FORCED_OUT_OVERRIDE) return false;
+  return getCombatTicksRemainingByName(playerName) > 0;
 }
 
 export function isInCombat(player) {
-  return getCombatTicksRemaining(player) > 0;
+  return isPlayerNameInCombat(getPlayerKey(player));
+}
+
+export function setCombat(player) {
+  const playerKey = getPlayerKey(player);
+  if (getForcedOverrideMode(getCombatOverrideByName(playerKey)) === FORCED_OUT_OVERRIDE) {
+    return;
+  }
+
+  const expiry = nowTick() + CONFIG.combatTagSeconds * TICKS_PER_SECOND;
+  STATE.combatUntilByName.set(playerKey, expiry);
+  player.addTag("qol:in_combat");
 }
 
 export function clearCombatHud(player) {
   if (!CONFIG.combatHudEnabled) return;
 
   const playerKey = getPlayerKey(player);
-  if (!STATE.lastCombatHudSecondsByName.has(playerKey)) return;
+  if (!STATE.lastCombatHudValueByName.has(playerKey)) return;
 
   player.onScreenDisplay.setActionBar("");
-  STATE.lastCombatHudSecondsByName.delete(playerKey);
+  STATE.lastCombatHudValueByName.delete(playerKey);
 }
 
 export function updateCombatHud(player) {
   if (!CONFIG.combatHudEnabled) return;
 
-  const remainingTicks = getCombatTicksRemaining(player);
-  if (remainingTicks <= 0) {
-    STATE.lastCombatHudSecondsByName.delete(getPlayerKey(player));
+  const playerKey = getPlayerKey(player);
+  if (getForcedOverrideMode(getCombatOverrideByName(playerKey)) === FORCED_IN_OVERRIDE) {
+    if (STATE.lastCombatHudValueByName.get(playerKey) === FORCED_HUD_VALUE) {
+      return;
+    }
+
+    player.onScreenDisplay.setActionBar(CONFIG.combatHudManualMessage);
+    STATE.lastCombatHudValueByName.set(playerKey, FORCED_HUD_VALUE);
     return;
   }
 
-  const playerKey = getPlayerKey(player);
+  const remainingTicks = getCombatTicksRemainingByName(playerKey);
+  if (remainingTicks <= 0) {
+    STATE.lastCombatHudValueByName.delete(playerKey);
+    return;
+  }
+
   const secondsRemaining = Math.ceil(remainingTicks / TICKS_PER_SECOND);
-  const lastShown = STATE.lastCombatHudSecondsByName.get(playerKey);
-  if (lastShown === secondsRemaining) return;
+  if (STATE.lastCombatHudValueByName.get(playerKey) === secondsRemaining) {
+    return;
+  }
 
   const formattedSeconds =
     secondsRemaining <= CONFIG.combatHudFinalSeconds
       ? `\u00a74${secondsRemaining}`
       : `\u00a7e${secondsRemaining}`;
-  const message = CONFIG.combatHudMessage.replace("{seconds}", formattedSeconds);
 
-  player.onScreenDisplay.setActionBar(message);
-  STATE.lastCombatHudSecondsByName.set(playerKey, secondsRemaining);
+  player.onScreenDisplay.setActionBar(
+    CONFIG.combatHudMessage.replace("{seconds}", formattedSeconds),
+  );
+  STATE.lastCombatHudValueByName.set(playerKey, secondsRemaining);
 }
 
 export function updateCombatState(player) {
-  if (isInCombat(player)) {
+  const playerKey = getPlayerKey(player);
+  if (isPlayerNameInCombat(playerKey)) {
     player.addTag("qol:in_combat");
     updateCombatHud(player);
     return;
   }
 
-  STATE.combatUntilByName.delete(getPlayerKey(player));
+  STATE.combatUntilByName.delete(playerKey);
   player.removeTag("qol:in_combat");
   clearCombatHud(player);
 }
 
-export function disableEquippedElytra(player) {
-  const equippable = player.getComponent("equippable");
-  const inventory = player.getComponent("inventory")?.container;
-  if (!equippable || !inventory) return;
+export function setCombatOverride(playerOrName, mode) {
+  const playerKey = getPlayerKey(playerOrName);
 
-  const chestItem = equippable.getEquipment(EquipmentSlot.Chest);
-  if (!chestItem || chestItem.typeId !== "minecraft:elytra") return;
-
-  equippable.setEquipment(EquipmentSlot.Chest);
-  const leftover = inventory.addItem(chestItem);
-  if (leftover) {
-    player.dimension.spawnItem(leftover, player.location);
-    player.sendMessage(
-      "\u00a7eElytra disabled. Inventory full, leftover item dropped.",
-    );
+  if (mode === COMBAT_OVERRIDE_MODES.forcedIn || mode === FORCED_IN_OVERRIDE) {
+    STATE.combatOverrideByName.set(playerKey, FORCED_IN_OVERRIDE);
     return;
   }
 
-  player.sendMessage("\u00a7eElytra disabled after taking player damage.");
+  if (mode === COMBAT_OVERRIDE_MODES.forcedOut || mode === FORCED_OUT_OVERRIDE) {
+    STATE.combatOverrideByName.set(playerKey, FORCED_OUT_OVERRIDE);
+    STATE.combatUntilByName.delete(playerKey);
+    return;
+  }
+
+  STATE.combatOverrideByName.delete(playerKey);
+}
+
+export function clearCombatOverride(playerOrName) {
+  STATE.combatOverrideByName.delete(getPlayerKey(playerOrName));
+}
+
+export function getCombatStatus(player) {
+  const playerKey = getPlayerKey(player);
+  const override = getForcedOverrideMode(getCombatOverrideByName(playerKey));
+
+  return {
+    overrideMode:
+      override === FORCED_IN_OVERRIDE
+        ? COMBAT_OVERRIDE_MODES.forcedIn
+        : override === FORCED_OUT_OVERRIDE
+          ? COMBAT_OVERRIDE_MODES.forcedOut
+          : "auto",
+    inCombat: isPlayerNameInCombat(playerKey),
+    timedTicksRemaining: getCombatTicksRemainingByName(playerKey),
+  };
 }
 
 export function getPlayerDamager(damageSource) {
@@ -105,7 +166,9 @@ export function getPlayerDamager(damageSource) {
 export function clearPlayerState(playerOrName) {
   const playerKey = getPlayerKey(playerOrName);
   STATE.combatUntilByName.delete(playerKey);
+  STATE.combatOverrideByName.delete(playerKey);
   STATE.borderWarnCooldownByName.delete(playerKey);
   STATE.safeZoneWarnCooldownByName.delete(playerKey);
-  STATE.lastCombatHudSecondsByName.delete(playerKey);
+  STATE.lastCombatHudValueByName.delete(playerKey);
+  STATE.recentProxyDeathsByName.delete(playerKey);
 }

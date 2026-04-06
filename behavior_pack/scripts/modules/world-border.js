@@ -25,6 +25,21 @@ function clampToBorder(value, radius) {
   return value;
 }
 
+function getKnockbackDirection(fromLocation, toLocation) {
+  const deltaX = toLocation.x - fromLocation.x;
+  const deltaZ = toLocation.z - fromLocation.z;
+  const magnitude = Math.hypot(deltaX, deltaZ);
+
+  if (magnitude <= Number.EPSILON) {
+    return undefined;
+  }
+
+  return {
+    x: deltaX / magnitude,
+    z: deltaZ / magnitude,
+  };
+}
+
 export function enforceWorldBorder(player) {
   const { x, y, z } = player.location;
   const radius = getBorderRadiusForDimension(player.dimension.id);
@@ -38,14 +53,20 @@ export function enforceWorldBorder(player) {
     y,
     z: clampToBorder(z, radius),
   };
+  const knockbackDirection = getKnockbackDirection(
+    { x, z },
+    clampedLocation,
+  );
 
   player.teleport(clampedLocation, { dimension: player.dimension });
-  player.applyKnockback(
-    0,
-    0,
-    BORDER_KNOCKBACK_HORIZONTAL,
-    BORDER_KNOCKBACK_VERTICAL,
-  );
+  if (knockbackDirection) {
+    player.applyKnockback(
+      knockbackDirection.x,
+      knockbackDirection.z,
+      BORDER_KNOCKBACK_HORIZONTAL,
+      BORDER_KNOCKBACK_VERTICAL,
+    );
+  }
 
   const playerKey = getPlayerKey(player);
   const cooldownUntil = STATE.borderWarnCooldownByName.get(playerKey) ?? 0;

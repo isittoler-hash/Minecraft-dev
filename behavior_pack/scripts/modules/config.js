@@ -31,4 +31,8 @@ export const CONFIG = {
   combatHudEnabled: true,
   combatHudMessage: "\u00a7c\u2694 In combat: \u00a7e{seconds}s",
   combatHudFinalSeconds: 5,
+  combatHudManualMessage: "\u00a7c\u2694 In combat: \u00a7eMANUAL",
+  proxyGroundScanIntervalTicks: 40,
+  proxyDeathMarkerWindowTicks: 20,
+  proxyLedgerTombstoneTicks: 6000,
 };
