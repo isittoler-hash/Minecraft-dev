@@ -1,8 +1,6 @@
 export const TICKS_PER_SECOND = 20;
 export const BORDER_WARNING_COOLDOWN_TICKS = 100;
 export const BORDER_TELEPORT_PADDING = 0.5;
-export const BORDER_KNOCKBACK_HORIZONTAL = 0.8;
-export const BORDER_KNOCKBACK_VERTICAL = 0.1;
 
 export const CONFIG = {
   worldBorderRadius: 1500,

@@ -9,7 +9,7 @@ This repository is now scaffolded for a server-focused Bedrock addon pair:
 
 - Speed I on path blocks (`minecraft:grass_path`, with `minecraft:dirt_path` compatibility).
 - Speed II on `minecraft:bricks`.
-- Configurable square world border with per-dimension settings and pushback.
+- Configurable square world border with per-dimension settings and safe correction.
 - Anti combat log tag window (15s) with reconnect penalty.
 - Combat elytra disable (elytra unequips while combat-tagged).
 - Region-based safezone exceptions for combat systems (spawn support by default).
